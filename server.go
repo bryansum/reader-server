@@ -34,35 +34,6 @@ func mimeType(filelist []string) []string {
 	return out
 }
 
-// Given an absolute path, generate a flat list of all files recursively
-// (relative to the input directory)
-func walkDirlist(absPath string) []string {
-	out := []string{}
-
-	walkFn := func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			log.Println("Couldn't find path ", path)
-			return nil
-		}
-
-		ignore := gitIgnore(info.Name())
-
-		if info.IsDir() && (info.Name() == ".git" || ignore) {
-			return filepath.SkipDir
-		}
-		if !info.IsDir() {
-			rel, _ := filepath.Rel(absPath, path)
-			out = append(out, rel)
-		}
-		return nil
-	}
-
-	if err := filepath.Walk(absPath, walkFn); err != nil {
-		log.Println("file walk failed", err)
-	}
-	return out
-}
-
 func dirlist(repo string) []string {
 	gitDir := filepath.Join(repo, ".git")
 	out, err := exec.Command("git", "--git-dir", gitDir, "ls-files").Output()
@@ -83,11 +54,18 @@ func writeJSON(slice interface{}, w http.ResponseWriter) error {
 type File struct {
 	Name string `json:"name"`
 	mimeType string `json:"mime-type"`
+	Size int64 `json:"size"`
 }
 
-func NewFile(name string) File {
-	mime := mime.TypeByExtension(filepath.Ext(name))
-	return File{Name: name, mimeType: mime}
+func NewFile(path string) File {
+	// split repo from file path
+	name := path[strings.Index(path, "/")+1:]
+	var size int64
+	if fi, err := os.Stat(path); err == nil {
+		size = fi.Size()
+	}
+	mime := mime.TypeByExtension(filepath.Ext(path))
+	return File{Name: name, mimeType: mime, Size: size}
 }
 
 type Repo struct {
@@ -98,20 +76,19 @@ type Repo struct {
 
 func (r *Repo) SetFiles() {
 	files := dirlist(r.Name)
-	for i := 0; i < len(files); i++ {
-		f := NewFile(files[i])
-		r.Files = append(r.Files, f)
+	for _, fname := range files {
+		r.Files = append(r.Files, NewFile(filepath.Join(r.Name, fname)))
 	}
 }
 
 func findReadme(fios []os.FileInfo) File {
 	for _, fi := range fios {
-		file := fi.Name()
-		if strings.HasPrefix(file, "README") || strings.HasPrefix(file, "readme") {
-			return NewFile(file)
+		name := fi.Name()
+		if strings.HasPrefix(name, "README") || strings.HasPrefix(name, "readme") {
+			return File{Name: name}
 		}
 	}
-	return NewFile("")
+	return File{}
 }
 
 func NewRepo(name string) *Repo {
@@ -154,8 +131,7 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println(err)
 			http.NotFound(w, r)
 		} else {
-
-			mimeType := NewFile(f.Name()).mimeType
+			mimeType := NewFile(path).mimeType
 			w.Header().Set("Content-Type", mimeType)
 			io.Copy(w, f)
 		}

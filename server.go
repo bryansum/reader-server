@@ -1,6 +1,7 @@
 package main
 
 import (
+	"mime"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -79,30 +80,38 @@ func writeJSON(slice interface{}, w http.ResponseWriter) error {
 	return nil
 }
 
-type File map[string]string
+type File struct {
+	Name string `json:"name"`
+	mimeType string `json:"mime-type"`
+}
+
+func NewFile(name string) File {
+	mime := mime.TypeByExtension(filepath.Ext(name))
+	return File{Name: name, mimeType: mime}
+}
 
 type Repo struct {
 	Name string `json:"name"`
-	Readme string `json:"readme"`
+	Readme File `json:"readme"`
 	Files []File 	`json:"files,omitempty"`
 }
 
 func (r *Repo) SetFiles() {
 	files := dirlist(r.Name)
 	for i := 0; i < len(files); i++ {
-		f := File{"name": files[i]}
+		f := NewFile(files[i])
 		r.Files = append(r.Files, f)
 	}
 }
 
-func findReadme(fios []os.FileInfo) string {
+func findReadme(fios []os.FileInfo) File {
 	for _, fi := range fios {
-		path := fi.Name()
-		if strings.HasPrefix(path, "README") || strings.HasPrefix(path, "readme") {
-			return path
+		file := fi.Name()
+		if strings.HasPrefix(file, "README") || strings.HasPrefix(file, "readme") {
+			return NewFile(file)
 		}
 	}
-	return ""
+	return NewFile("")
 }
 
 func NewRepo(name string) *Repo {
@@ -145,6 +154,9 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println(err)
 			http.NotFound(w, r)
 		} else {
+
+			mimeType := NewFile(f.Name()).mimeType
+			w.Header().Set("Content-Type", mimeType)
 			io.Copy(w, f)
 		}
 	}
@@ -170,7 +182,41 @@ func listingHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(out, w)
 }
 
+func addExtensions() {
+	mime.AddExtensionType(".c", "text/x-csrc")
+	mime.AddExtensionType(".h", "text/x-csrc")
+	mime.AddExtensionType(".cpp", "text/x-c++src")
+	mime.AddExtensionType(".hpp", "text/x-c++src")
+
+	mime.AddExtensionType(".java", "text/x-java")
+
+	mime.AddExtensionType(".m", "text/x-csrc")
+	mime.AddExtensionType(".js", "text/javascript")
+	mime.AddExtensionType(".json", "application/json")
+
+	mime.AddExtensionType(".sh", "text/x-sh")
+
+	mime.AddExtensionType(".go", "text/x-go")
+
+	mime.AddExtensionType(".php", "text/x-php")
+	mime.AddExtensionType(".py", "text/x-python")
+	mime.AddExtensionType(".rb", "text/x-ruby")
+
+	mime.AddExtensionType(".md", "text/x-markdown")
+	mime.AddExtensionType(".markdown", "text/x-markdown")
+
+	mime.AddExtensionType(".coffee", "text/x-coffeescript")
+
+	mime.AddExtensionType(".scss", "text/x-scss")
+	mime.AddExtensionType(".less", "text/x-less")
+
+	mime.AddExtensionType(".erb", "application/x-erb")
+	mime.AddExtensionType(".ejs", "application/x-ejs")
+}
+
 func main() {
+	addExtensions()
+
 	if os.Chdir(srcDir) != nil {
 		log.Println("Failed changing directory to", srcDir)
 	}

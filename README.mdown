@@ -5,6 +5,7 @@ X * Vend repo information (filetree structure)
 X * Proxy individual files from path to client
 
 X * Transmit MIME type with file
+* Transmit improved (quicker mime type with each file)
 * Transmit file size with file
 
 

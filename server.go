@@ -14,6 +14,12 @@ import (
 
 const srcDir string = "/Users/bks/src"
 
+// True if ignored
+func gitIgnore(fname string) bool {
+	// 0 means ignored; 1 means none ignored
+	return exec.Command("git", "check-ignore", fname).Run() == nil;
+}
+
 // Given a file list, return a list of mime types
 func mimeType(filelist []string) []string {
 	out := []string{}
@@ -29,7 +35,7 @@ func mimeType(filelist []string) []string {
 
 // Given an absolute path, generate a flat list of all files recursively
 // (relative to the input directory)
-func dirlist(absPath string) []string {
+func walkDirlist(absPath string) []string {
 	out := []string{}
 
 	walkFn := func(path string, info os.FileInfo, err error) error {
@@ -38,7 +44,9 @@ func dirlist(absPath string) []string {
 			return nil
 		}
 
-		if info.IsDir() && info.Name() == ".git" {
+		ignore := gitIgnore(info.Name())
+
+		if info.IsDir() && (info.Name() == ".git" || ignore) {
 			return filepath.SkipDir
 		}
 		if !info.IsDir() {
@@ -52,6 +60,15 @@ func dirlist(absPath string) []string {
 		log.Println("file walk failed", err)
 	}
 	return out
+}
+
+func dirlist(repo string) []string {
+	gitDir := filepath.Join(repo, ".git")
+	out, err := exec.Command("git", "--git-dir", gitDir, "ls-files").Output()
+	if err != nil {
+		log.Println("Couldn't find repo", repo)
+	}
+	return strings.Fields(string(out))
 }
 
 func writeJSON(slice interface{}, w http.ResponseWriter) error {
@@ -71,7 +88,7 @@ type Repo struct {
 }
 
 func (r *Repo) SetFiles() {
-	files := dirlist(filepath.Join(srcDir, r.Name))
+	files := dirlist(r.Name)
 	for i := 0; i < len(files); i++ {
 		f := File{"name": files[i]}
 		r.Files = append(r.Files, f)
@@ -89,7 +106,7 @@ func findReadme(fios []os.FileInfo) string {
 }
 
 func NewRepo(name string) *Repo {
-	fios, err := ioutil.ReadDir(filepath.Join(srcDir, name))
+	fios, err := ioutil.ReadDir(name)
 
 	if err != nil {
 		log.Println("Can't find repo ", name)
@@ -124,8 +141,7 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 
 	// /repo/plus/file.md
 	} else {
-		srcPath := filepath.Join(srcDir, path)
-		if f, err := os.Open(srcPath); err != nil {
+		if f, err := os.Open(path); err != nil {
 			log.Println(err)
 			http.NotFound(w, r)
 		} else {
@@ -137,7 +153,7 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 func listingHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
-	fios, err := ioutil.ReadDir(srcDir)
+	fios, err := ioutil.ReadDir(".")
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Oops", http.StatusInternalServerError)
@@ -155,6 +171,10 @@ func listingHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	if os.Chdir(srcDir) != nil {
+		log.Println("Failed changing directory to", srcDir)
+	}
+
 	http.HandleFunc("/listing", listingHandler)
 	http.HandleFunc("/", fileHandler)
 	http.ListenAndServe(":8080", nil)

@@ -1,0 +1,15 @@
+{
+  "name": "reader-server",
+  "version": "0.0.1",
+  "description": "Read and serve some code",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/bryansum/reader-server.git"
+  },
+  "author": "Bryan Summersett",
+  "license": "BSD-2-Clause",
+  "devDependencies": {
+    "highlight.js": "~8.0.0"
+  }
+}

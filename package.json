@@ -10,6 +10,8 @@
   "author": "Bryan Summersett",
   "license": "BSD-2-Clause",
   "devDependencies": {
-    "highlight.js": "~8.0.0"
+    "highlight.js": "~8.0.0",
+    "wach": "x",
+    "http-server": "x"
   }
 }

@@ -1,27 +1,49 @@
 SHELL = /bin/bash
 
-.PHONY: all
+APP=app
+JS=$(APP)/js
+CSS=$(APP)/css
+DIST=public
+BIN=node_modules/.bin
 
-all: node_modules tags/queue-1.0.7/tags highlight/queue-1.0.7/queue.html
+.PHONY: all watch clean serve
+
+all: node_modules $(DIST)/$(APP).css $(DIST)/$(APP).js $(DIST)/index.html $(DIST)/repo/mbostock/queue $(DIST)/highlight/mbostock/queue $(DIST)/tags/mbostock/queue
 
 node_modules:
 	npm install
 
 .SECONDARY:
 
-zip/queue-%.zip:
-	mkdir -p $(dir $@)
-	curl "https://github.com/mbostock/queue/archive/v$*.zip" -L -o $@.download
-	mv $@.download $@
+# App
+serve: all
+	$(BIN)/http-server $(DIST) -p 8000
 
-src/queue-%: zip/queue-%.zip
-	mkdir -p $(dir $@)
-	unzip -d src $<
+clean:
+	rm -f $(DIST)/$(APP).css $(DIST)/$(APP).js
 
-highlight/queue-%/queue.html: src/queue-%/queue.js
-	mkdir -p $(dir $@)
-	bin/highlight $< $@
+watch: node_modules
+	$(BIN)/wach -o "$(APP)/**/*" make all
 
-tags/queue-%/tags: src/queue-%/queue.js
+$(DIST)/$(APP).css: $(CSS)/$(APP).css
+	cat $^ > $@
+
+$(DIST)/$(APP).js: $(JS)/$(APP).js
+	cat $^ > $@
+
+$(DIST)/index.html: $(APP)/index.html
+	cat $^ > $@
+
+# Repo builds
+
+$(DIST)/repo/%:
+	mkdir -p $(dir $@)
+	git clone https://github.com/$*.git $@
+
+$(DIST)/highlight/%: $(DIST)/repo/%
+	mkdir -p $@
+	bin/highlight $</queue.js $@/queue.js
+
+$(DIST)/tags/%: $(DIST)/repo/%
 	mkdir -p $(dir $@)
 	ctags -f $@ --fields=+afiKlmnsSzt -R $<

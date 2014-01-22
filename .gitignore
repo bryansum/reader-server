@@ -1,7 +1,4 @@
 server
 node_modules/
-highlight/
-tags/
-src/
-zip/
+build/
 public/

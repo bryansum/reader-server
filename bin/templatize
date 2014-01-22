@@ -1,0 +1,32 @@
+#!/usr/bin/env node
+
+'use strict';
+
+// Usage: templatize <in.js> <out.html>
+var ejs = require('ejs'),
+    path = require('path'),
+    fs = require('fs'),
+    hljs = require('highlight.js'),
+    inf = process.argv[2],
+    outf = process.argv[3],
+    appDir = path.join(__dirname, '..', 'app'),
+    viewDir = path.join(appDir, 'views'),
+    layoutTmpl = fs.readFileSync(path.join(appDir, 'index.ejs'), 'utf8'),
+    codeTmpl = fs.readFileSync(path.join(viewDir, 'code.ejs'), 'utf8')
+
+console.log(inf)
+console.log(outf)
+
+var code = fs.readFileSync(inf, 'utf8')
+var inHtml = hljs.highlight('javascript', code).value
+var body = ejs.render(codeTmpl, {code: inHtml, size: countLines(code) })
+var out = ejs.render(layoutTmpl, { body: body })
+fs.writeFileSync(outf, out)
+
+function countLines(code) {
+  var count = 0
+  for (var i = 0; i < code.length; i++) {
+    if (code[i] === '\n') count++
+  }
+  return count
+}

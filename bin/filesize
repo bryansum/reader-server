@@ -1,0 +1,23 @@
+#!/usr/bin/env node
+
+'use strict';
+
+var fs = require('fs'),
+  readline = require('readline'),
+  path = require('path'),
+  basedir = process.argv[2];
+
+var rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+  terminal: false
+});
+var out = [];
+
+rl.on('line', function(f) {
+  var stats = fs.statSync(path.join(basedir, f)),
+    obj = {file: f, size: stats.size};
+  out.push(obj);
+}).on('close', function() {
+  console.log(JSON.stringify(out));
+});

@@ -1,3 +1,19 @@
 body {
-  background-color: white;
+}
+
+pre {
+  margin: 0;
+}
+.float {
+  float: left;
+}
+
+.hljs {
+  font-family: 'Menlo';
+  font-size: 13px;
+}
+
+.line-numbers {
+  text-align: right;
+  color: #acacac !important;
 }

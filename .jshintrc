@@ -1,0 +1,22 @@
+{
+    "asi": true,
+    "bitwise": true,
+    "browser": true,
+    "camelcase": true,
+    "eqeqeq": true,
+    "eqnull": true,
+    "esnext": true,
+    "immed": true,
+    "jquery": true,
+    "latedef": true,
+    "laxcomma": true,
+    "newcap": true,
+    "noarg": true,
+    "node": true,
+    "quotmark": "single",
+    "smarttabs": true,
+    "strict": true,
+    "trailing": true,
+    "undef": true,
+    "unused": true
+}

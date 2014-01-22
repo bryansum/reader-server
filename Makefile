@@ -7,11 +7,17 @@ BUILD = build
 DIST = public
 BIN = node_modules/.bin
 
-.PHONY: all watch clean serve
+GITHUB_REPOS = mbostock/queue
+TARGETS = mbostock/queue/queue.js
 
-all: node_modules $(DIST)/$(APP).css $(DIST)/$(APP).js $(DIST)/index.html
+.PHONY: all build init watch clean serve
 
-node_modules:
+all: init build
+
+init: node_modules $(addprefix $(BUILD)/,$(GITHUB_REPOS))
+	mkdir -p $(DIST)
+
+node_modules: package.json
 	npm install
 
 .SECONDARY:
@@ -23,8 +29,10 @@ serve: all
 clean:
 	rm -fr $(DIST)/*
 
+build: $(DIST)/$(APP).css $(DIST)/$(APP).js $(DIST)/index.html
+
 watch: node_modules
-	$(BIN)/wach -o "$(APP)/**/*" make all
+	$(BIN)/wach -o "$(APP)/**/*" $(MAKE) build
 
 $(DIST)/$(APP).css: $(CSS)/*.css
 	cat $^ > $@
@@ -32,7 +40,7 @@ $(DIST)/$(APP).css: $(CSS)/*.css
 $(DIST)/$(APP).js: $(JS)/*.js
 	cat $^ > $@
 
-$(DIST)/index.html: $(BUILD)/mbostock/queue/queue.js $(APP)/*.ejs $(APP)/views/*.ejs
+$(DIST)/index.html: $(addprefix $(BUILD)/,$(TARGETS)) $(APP)/*.ejs $(APP)/views/*.ejs
 	bin/templatize $< $@
 
 # Repo builds

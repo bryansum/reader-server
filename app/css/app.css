@@ -1,4 +1,5 @@
 body {
+  font-family: 'Menlo', monospace;
 }
 
 pre {
@@ -9,11 +10,17 @@ pre {
 }
 
 .hljs {
-  font-family: 'Menlo';
+  font-family: 'Menlo', monospace;
   font-size: 13px;
 }
 
 .line-numbers {
   text-align: right;
+  color: #acacac !important;
+}
+
+.stats {
+  font-size: 11px;
+  padding: 1em;
   color: #acacac !important;
 }

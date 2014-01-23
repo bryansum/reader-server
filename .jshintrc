@@ -8,7 +8,6 @@
     "esnext": true,
     "immed": true,
     "jquery": true,
-    "latedef": true,
     "laxcomma": true,
     "newcap": true,
     "noarg": true,

@@ -14,12 +14,16 @@ var ejs = require('ejs'),
     layoutTmpl = fs.readFileSync(path.join(appDir, 'index.ejs'), 'utf8'),
     codeTmpl = fs.readFileSync(path.join(viewDir, 'code.ejs'), 'utf8')
 
-console.log(inf)
-console.log(outf)
-
 var code = fs.readFileSync(inf, 'utf8')
 var inHtml = hljs.highlight('javascript', code).value
-var body = ejs.render(codeTmpl, {code: inHtml, size: countLines(code) })
+var loc = countLines(code)
+var body = ejs.render(codeTmpl, {
+  loc: loc,
+  bytes: code.length,
+  path: path.basename(inf),
+  code: inHtml,
+  summary: summary(code)
+})
 var out = ejs.render(layoutTmpl, { body: body })
 fs.writeFileSync(outf, out)
 
@@ -29,4 +33,9 @@ function countLines(code) {
     if (code[i] === '\n') count++
   }
   return count
+}
+
+// http://c2.com/doc/SignatureSurvey/
+function summary(code) {
+  return code.replace(/[^{};"]/g, '')
 }

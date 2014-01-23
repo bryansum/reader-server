@@ -1,5 +1,7 @@
+<h3><%= path %></h3>
+<div class="stats"><%= loc %> loc <%= bytes %>b<br> <%= summary %></div>
 <div class="line-numbers hljs float">
-  <% for (var i = 0; i < size; i++) { -%>
+  <% for (var i = 0; i < loc; i++) { -%>
   <%= i + 1 %><br>
   <% } -%>
 </div>

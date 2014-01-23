@@ -1,6 +1,6 @@
 # Reader
 
-A code reading application. 
+A code reading application.
 
 ### Server
 * ctags

@@ -15,7 +15,6 @@ TARGETS = mbostock/queue/queue.js
 all: init build
 
 init: node_modules $(addprefix $(BUILD)/,$(GITHUB_REPOS))
-	mkdir -p $(DIST)
 
 node_modules: package.json
 	npm install
@@ -29,10 +28,13 @@ serve: all
 clean:
 	rm -fr $(DIST)/*
 
-build: $(DIST)/$(APP).css $(DIST)/$(APP).js $(DIST)/index.html
+build: $(DIST) $(DIST)/$(APP).css $(DIST)/$(APP).js $(DIST)/index.html
 
 watch: node_modules
 	$(BIN)/wach -o "$(APP)/**/*" $(MAKE) build
+
+$(DIST):
+	mkdir -p $@
 
 $(DIST)/$(APP).css: $(CSS)/*.css
 	cat $^ > $@

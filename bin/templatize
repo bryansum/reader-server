@@ -1,34 +1,117 @@
 #!/usr/bin/env node
 
-'use strict';
+// Usage: templatize <owner/repo>
 
-var APP_DIR = __dirname + '/../app',
-    VIEW_DIR = APP_DIR + '/views',
-    SRC = __dirname + '/../src';
-
-var ctx = {
-  appDir: APP_DIR,
-  viewDir: VIEW_DIR
-};
-
-// Usage: templatize <in.js> <out.html>
 var path = require('path'),
     fs = require('fs'),
     hljs = require('highlight.js'),
-    tmpl = require(SRC + '/tmpl'),
-    loc = require(SRC + '/loc'),
-    summary = require(SRC + '/summary'),
-    inf = process.argv[2],
-    outf = process.argv[3];
+    ejs = require('ejs'),
+    stats = require(__dirname + '/../src/stats');
 
-var code = fs.readFileSync(inf, 'utf8');
+var repoName = process.argv[2];
 
-fs.writeFileSync(outf, tmpl.view(tmpl.layoutPath('index', ctx), {
-  body: tmpl.view(tmpl.viewPath('code', ctx), {
-    loc: loc(code),
-    bytes: code.length, // NOTE: this is not necessarily byte size (non-ASCII chars)
-    path: path.basename(inf),
-    code: hljs.highlight('javascript', code).value,
-    summary: summary(code)
-  })
-}));
+var opts = {
+  appDir: __dirname + '/../app',
+  viewDir: __dirname + '/../app/views',
+  cssDir: __dirname + '/../app/css',
+  jsDir: __dirname + '/../app/js',
+  distDir: __dirname + '/../public',
+  distRepoDir: __dirname + '/../public/' + repoName,
+  repoDir: __dirname + '/../repo'
+};
+
+var repo = path.join(opts.repoDir, repoName),
+    stats = stats(repo);
+
+function run() {
+  copyCss();
+  copyJs();
+  templatize();
+  tree();
+}
+
+run();
+
+// Stats tasks
+
+function tree() {
+  fs.writeFileSync(path.join(opts.distRepoDir, 'files.json'), JSON.stringify(stats.tree()));
+}
+
+// View tasks
+
+function templatize() {
+  var queueJs = stats.file('queue.js');
+  queueJs.code = highlight(queueJs.code);
+
+  fs.writeFileSync(path.join(opts.distDir, 'index.html'), tmpl(layout('index'), {
+    body: tmpl(view('code'), queueJs),
+    css: css(),
+    js: js()
+  }));
+}
+
+function highlight(code) {
+  return hljs.highlight('javascript', code).value;
+}
+
+function tmpl(path, opts) {
+  return ejs.render(fs.readFileSync(path, 'utf8'), opts);
+}
+
+function css() {
+  var files = fs.readdirSync(opts.cssDir),
+      out = [];
+
+  files.forEach(function(file) {
+    out.push('<link rel="stylesheet" type="text/css" href="/' + file + '">');
+  });
+  return out.join('\n');
+}
+
+function js() {
+  var from = opts.jsDir,
+      to = opts.distDir,
+      files = fs.readdirSync(from),
+      out = [];
+
+  files.forEach(function(file) {
+    out.push('<script type="text/javascript" src="/' + file + '"></script>');
+    copy(from, to, file);
+  });
+  return out.join('\n');
+}
+
+function layout(name) {
+  return path.join(opts.appDir, name + '.ejs');
+}
+
+function view(name) {
+  return path.join(opts.viewDir, name + '.ejs');
+}
+
+// File tasks
+
+function copyJs() {
+  var from = opts.cssDir,
+      to = opts.distDir,
+      files = fs.readdirSync(from);
+
+  files.forEach(function(file) {
+    copy(from, to, file);
+  });
+}
+
+function copyCss() {
+  var from = opts.cssDir,
+      to = opts.distDir,
+      files = fs.readdirSync(from);
+
+  files.forEach(function(file) {
+    copy(from, to, file);
+  });
+}
+
+function copy(from, to, file) {
+  fs.createReadStream(path.join(from, file)).pipe(fs.createWriteStream(path.join(to, file)));
+}

@@ -1,26 +1,31 @@
 body {
-  font-family: 'Menlo', monospace;
+	font-family: 'Menlo', monospace;
+	color: #333;
 }
 
 pre {
-  margin: 0;
+	margin: 0;
 }
 .float {
-  float: left;
+	float: left;
 }
 
 .hljs {
-  font-family: 'Menlo', monospace;
-  font-size: 13px;
+	font-family: 'Menlo', monospace;
+	font-size: 11px;
+}
+.hljs-comment {
+	color: #aaa;
 }
 
 .line-numbers {
-  text-align: right;
-  color: #acacac !important;
+	text-align: right;
+	color: #acacac !important;
+	display: none;
 }
 
 .stats {
-  font-size: 11px;
-  padding: 1em;
-  color: #acacac !important;
+	font-size: 11px;
+	padding: 1em;
+	color: #acacac !important;
 }

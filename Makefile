@@ -30,7 +30,7 @@ clean:
 
 build: $(DIST) $(DIST)/$(APP).css $(DIST)/$(APP).js $(DIST)/index.html
 
-watch: node_modules
+watch: node_modules build
 	$(BIN)/wach -o "$(APP)/**/*" $(MAKE) build
 
 $(DIST):

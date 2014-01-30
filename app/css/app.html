@@ -1,0 +1,178 @@
+<!doctype html>
+<html>
+<head>
+  <title></title>
+  <link rel="stylesheet" type="text/css" href="/app.css">
+  <link href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,500,600,700' rel='stylesheet' type='text/css'>
+</head>
+<body>
+  <h1>Code reader v1000.</h1>
+  <h3>queue.js</h3>
+<div class="stats">80 loc 2064b<br> {;{;;{{;;;;}}{{;;{;;;}{;;;}};}{;;;}{{{;;;};}{;;;;}{;;;;}};}{}&quot;&quot;;&quot;&quot;{;};&quot;&quot;;;};</div>
+<div class="line-numbers hljs float">
+    1<br>
+    2<br>
+    3<br>
+    4<br>
+    5<br>
+    6<br>
+    7<br>
+    8<br>
+    9<br>
+    10<br>
+    11<br>
+    12<br>
+    13<br>
+    14<br>
+    15<br>
+    16<br>
+    17<br>
+    18<br>
+    19<br>
+    20<br>
+    21<br>
+    22<br>
+    23<br>
+    24<br>
+    25<br>
+    26<br>
+    27<br>
+    28<br>
+    29<br>
+    30<br>
+    31<br>
+    32<br>
+    33<br>
+    34<br>
+    35<br>
+    36<br>
+    37<br>
+    38<br>
+    39<br>
+    40<br>
+    41<br>
+    42<br>
+    43<br>
+    44<br>
+    45<br>
+    46<br>
+    47<br>
+    48<br>
+    49<br>
+    50<br>
+    51<br>
+    52<br>
+    53<br>
+    54<br>
+    55<br>
+    56<br>
+    57<br>
+    58<br>
+    59<br>
+    60<br>
+    61<br>
+    62<br>
+    63<br>
+    64<br>
+    65<br>
+    66<br>
+    67<br>
+    68<br>
+    69<br>
+    70<br>
+    71<br>
+    72<br>
+    73<br>
+    74<br>
+    75<br>
+    76<br>
+    77<br>
+    78<br>
+    79<br>
+    80<br>
+  </div>
+<pre class="float"><code class="hljs">(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+  <span class="hljs-keyword">var</span> slice = [].slice;
+
+  <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">queue</span><span class="hljs-params">(parallelism)</span> {</span>
+    <span class="hljs-keyword">var</span> q,
+        tasks = [],
+        started = <span class="hljs-number">0</span>, <span class="hljs-comment">// number of tasks that have been started (and perhaps finished)</span>
+        active = <span class="hljs-number">0</span>, <span class="hljs-comment">// number of tasks currently being executed (started but not finished)</span>
+        remaining = <span class="hljs-number">0</span>, <span class="hljs-comment">// number of tasks not yet finished</span>
+        popping, <span class="hljs-comment">// inside a synchronous task callback?</span>
+        error = <span class="hljs-literal">null</span>,
+        await = noop,
+        all;
+
+    <span class="hljs-keyword">if</span> (!parallelism) parallelism = <span class="hljs-literal">Infinity</span>;
+
+    <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">pop</span><span class="hljs-params">()</span> {</span>
+      <span class="hljs-keyword">while</span> (popping = started &lt; tasks.length &amp;&amp; active &lt; parallelism) {
+        <span class="hljs-keyword">var</span> i = started++,
+            t = tasks[i],
+            a = slice.call(t, <span class="hljs-number">1</span>);
+        a.push(callback(i));
+        ++active;
+        t[<span class="hljs-number">0</span>].apply(<span class="hljs-literal">null</span>, a);
+      }
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">callback</span><span class="hljs-params">(i)</span> {</span>
+      <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(e, r)</span> {</span>
+        --active;
+        <span class="hljs-keyword">if</span> (error != <span class="hljs-literal">null</span>) <span class="hljs-keyword">return</span>;
+        <span class="hljs-keyword">if</span> (e != <span class="hljs-literal">null</span>) {
+          error = e; <span class="hljs-comment">// ignore new tasks and squelch active callbacks</span>
+          started = remaining = <span class="hljs-literal">NaN</span>; <span class="hljs-comment">// stop queued tasks from starting</span>
+          notify();
+        } <span class="hljs-keyword">else</span> {
+          tasks[i] = r;
+          <span class="hljs-keyword">if</span> (--remaining) popping || pop();
+          <span class="hljs-keyword">else</span> notify();
+        }
+      };
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">notify</span><span class="hljs-params">()</span> {</span>
+      <span class="hljs-keyword">if</span> (error != <span class="hljs-literal">null</span>) await(error);
+      <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (all) await(error, tasks);
+      <span class="hljs-keyword">else</span> await.apply(<span class="hljs-literal">null</span>, [error].concat(tasks));
+    }
+
+    <span class="hljs-keyword">return</span> q = {
+      defer: <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span>
+        <span class="hljs-keyword">if</span> (!error) {
+          tasks.push(<span class="hljs-built_in">arguments</span>);
+          ++remaining;
+          pop();
+        }
+        <span class="hljs-keyword">return</span> q;
+      },
+      await: <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(f)</span> {</span>
+        await = f;
+        all = <span class="hljs-literal">false</span>;
+        <span class="hljs-keyword">if</span> (!remaining) notify();
+        <span class="hljs-keyword">return</span> q;
+      },
+      awaitAll: <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(f)</span> {</span>
+        await = f;
+        all = <span class="hljs-literal">true</span>;
+        <span class="hljs-keyword">if</span> (!remaining) notify();
+        <span class="hljs-keyword">return</span> q;
+      }
+    };
+  }
+
+  <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">noop</span><span class="hljs-params">()</span> {</span>}
+
+  queue.version = <span class="hljs-string">"1.0.7"</span>;
+  <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> define === <span class="hljs-string">"function"</span> &amp;&amp; define.amd) define(<span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> {</span> <span class="hljs-keyword">return</span> queue; });
+  <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> module === <span class="hljs-string">"object"</span> &amp;&amp; module.exports) module.exports = queue;
+  <span class="hljs-keyword">else</span> <span class="hljs-keyword">this</span>.queue = queue;
+})();
+</code></pre>
+
+  <script type="text/javascript" src="/app.js"></script>
+</body>
+</html>

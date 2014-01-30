@@ -13,6 +13,7 @@
     "highlight.js": "~8.0.0",
     "wach": "x",
     "http-server": "x",
-    "ejs": "x"
+    "ejs": "x",
+    "walk": "x"
   }
 }

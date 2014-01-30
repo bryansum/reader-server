@@ -16,6 +16,7 @@ A code reading application.
 * Show visual file size indicator
 * Highlight other occurences of symbols on click
 * Adjust URLs when switching file location (History API)
+* File tree
 
 ## Backlog
 * Find top-level functions?

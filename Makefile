@@ -3,7 +3,7 @@ SHELL = /bin/bash
 APP = app
 JS = $(APP)/js
 CSS = $(APP)/css
-REPO = repo
+BUILD = build
 DIST = public
 BIN = node_modules/.bin
 
@@ -14,7 +14,7 @@ TARGETS = mbostock/queue/queue.js
 
 all: init build
 
-init: node_modules $(addprefix $(REPO)/,$(GITHUB_REPOS))
+init: node_modules $(addprefix $(BUILD)/,$(GITHUB_REPOS))
 
 node_modules: package.json
 	npm install
@@ -33,15 +33,15 @@ build: $(addprefix $(DIST)/,$(GITHUB_REPOS))
 watch: node_modules build
 	$(BIN)/wach -o "$(APP)/**/*" $(MAKE) build
 
-$(DIST)/%: $(REPO)/%
+$(DIST)/%: $(BUILD)/%
 	mkdir -p $@
 	bin/templatize $*
 
-# Repo builds
+# Builds
 
-$(REPO)/%:
+$(BUILD)/%:
 	git clone https://github.com/$*.git $@
 
-$(DIST)/tags/%: $(REPO)/src/%
+$(DIST)/tags/%: $(BUILD)/src/%
 	mkdir -p $(dir $@)
 	ctags -f $@ --fields=+afiKlmnsSzt -R $<

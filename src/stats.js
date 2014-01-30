@@ -1,20 +1,22 @@
 var walk = require('./walk'),
     fileStats = require('./file-stats');
 
-module.exports = function(dir) {
-  var stats = {},
-      tree = [];
+module.exports = function(dir, config) {
+  var stats = {};
 
   function filter(name, stat) {
     return stat.isDirectory() && name === '.git';
   }
 
+  stats.main = function() {
+    return fileStats(dir, config.main);
+  }
+
   stats.tree = function() {
-    tree = walk(dir, function(name, stat) {
+    return walk(dir, function(name, stat) {
       if (filter(name, stat)) return false;
       else return {name: name, size: stat.size};
     });
-    return tree;
   };
 
   stats.file = function(name) {

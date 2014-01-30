@@ -17,11 +17,13 @@ var opts = {
   jsDir: __dirname + '/../app/js',
   distDir: __dirname + '/../public',
   distRepoDir: __dirname + '/../public/' + repoName,
-  repoDir: __dirname + '/../repo'
+  buildDir: __dirname + '/../build',
+  configDir: __dirname + '/../config'
 };
 
-var repo = path.join(opts.repoDir, repoName),
-    stats = stats(repo);
+var repo = path.join(opts.buildDir, repoName),
+    config = JSON.parse(fs.readFileSync(path.join(opts.configDir, repoName.replace('/', '-'), '.json'), 'utf8'))
+    stats = stats(repo, config);
 
 function run() {
   copyCss();
@@ -41,11 +43,11 @@ function tree() {
 // View tasks
 
 function templatize() {
-  var queueJs = stats.file('queue.js');
-  queueJs.code = highlight(queueJs.code);
+  var main = stats.main();
+  main.code = highlight(main.code);
 
   fs.writeFileSync(path.join(opts.distDir, 'index.html'), tmpl(layout('index'), {
-    body: tmpl(view('code'), queueJs),
+    body: tmpl(view('code'), main),
     css: css(),
     js: js()
   }));

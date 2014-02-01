@@ -22,12 +22,14 @@ var opts = {
 };
 
 var repo = path.join(opts.buildDir, repoName),
-    config = JSON.parse(fs.readFileSync(path.join(opts.configDir, repoName.replace('/', '-'), '.json'), 'utf8'))
+    configPath = path.join(opts.configDir, repoName.replace('/', '-') + '.json'),
+    config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
     stats = stats(repo, config);
 
 function run() {
   copyCss();
   copyJs();
+  copyConfig();
   templatize();
   tree();
 }
@@ -114,6 +116,17 @@ function copyCss() {
   });
 }
 
+function copyConfig() {
+  copy(configPath, path.join(opts.distRepoDir, 'config.json'));
+}
+
+/**
+  * @param {string} from - from dir (if file is specified); from file otherwise
+  * @param {string} to - to dir (if file is specified); to file otherwise
+  * @param {?string} file - file to transfer
+  */
 function copy(from, to, file) {
-  fs.createReadStream(path.join(from, file)).pipe(fs.createWriteStream(path.join(to, file)));
+  from = file ? path.join(from, file) : from;
+  to = file ? path.join(to, file) : to;
+  fs.createReadStream(from).pipe(fs.createWriteStream(to));
 }
